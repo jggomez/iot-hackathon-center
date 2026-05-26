@@ -96,6 +96,20 @@ models.Sequential([
     | HIGH_ENGAGEMENT| 72% | Captures speech followed by energy spikes (applause). |
     | ROOM_EMPTY | 90% | Excellent performance in quiet environments. |
 
+----
+
+<img width="1188" height="490" alt="img1" src="https://github.com/user-attachments/assets/ee9149f9-5d23-4b3b-bc38-4828a936cfa3" />
+
+-----
+
+<img width="571" height="470" alt="img2" src="https://github.com/user-attachments/assets/a05b6205-d46c-4374-beb0-d99bebd387b1" />
+
+----
+
+<img width="511" height="198" alt="Screenshot 2026-05-26 at 11 49 37 a m" src="https://github.com/user-attachments/assets/87f0ac6d-ca5f-4bed-9426-52de3f6c63ee" />
+
+----
+
 ### 2. Thermal Stress Logic
 Risk evaluation based on the Heat Index (HI) standards:
 
@@ -104,6 +118,19 @@ Risk evaluation based on the Heat Index (HI) standards:
 | **NORMAL** | Optimal comfort. | Normal telemetry. |
 | **WARNING_HIGH_DENSITY** | Insufficient ventilation. | Visual alert + slow LED blinking. |
 | **CRITICAL_OVERCROWDING**| Risk of heat stroke. | Red Alert + Urgent Alarm. |
+
+----
+
+<img width="1405" height="848" alt="Screenshot 2026-05-26 at 12 17 10 p m" src="https://github.com/user-attachments/assets/865e0db6-fdd1-49ef-83b4-ee88f341184f" />
+
+----
+
+<img width="1397" height="865" alt="Screenshot 2026-05-26 at 12 12 38 p m" src="https://github.com/user-attachments/assets/752f2781-1d80-4d98-876e-a66f0cd250af" />
+
+----
+
+<img width="1361" height="876" alt="Screenshot 2026-05-26 at 12 13 54 p m" src="https://github.com/user-attachments/assets/ea9b96e0-1f8c-48dc-acea-2f627706a3c7" />
+
 
 ### 3. Hardware Footprint
 *   **Model Size**: 320 KB (Flash).
