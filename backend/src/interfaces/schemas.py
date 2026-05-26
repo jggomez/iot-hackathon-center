@@ -9,6 +9,11 @@ class SensorDataRequest(BaseModel):
     temperature: float
     humidity: float
     state: str
+    aiclass: int = 0
+    aiconfidence: int = 0
+    alert: str = "NORMAL"
+    msg: str = "Environment is optimal"
+    level: str = "INFO"
 
 class PubSubMessage(BaseModel):
     data: str
@@ -30,6 +35,11 @@ class SensorDataResponse(BaseModel):
     temperature: float
     humidity: float
     state: str
+    aiclass: int = 0
+    aiconfidence: int = 0
+    alert: str = "NORMAL"
+    msg: str = ""
+    level: str = "INFO"
     timestamp: str
     message: str = "Data stored successfully"
 

@@ -1,17 +1,22 @@
 from src.domain.entities import SensorData
 from src.domain.repositories import SensorRepository
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 class StoreSensorDataUseCase:
     def __init__(self, repository: SensorRepository):
         self.repository = repository
 
-    def execute(self, temperature: float, humidity: float, state: str) -> SensorData:
+    def execute(self, temperature: float, humidity: float, state: str, aiclass: int = 0, aiconfidence: int = 0, alert: str = "NORMAL", msg: str = "Environment is optimal", level: str = "INFO") -> SensorData:
         sensor_data = SensorData(
             temperature=temperature,
             humidity=humidity,
             state=state,
-            timestamp=datetime.now(UTC)
+            aiclass=aiclass,
+            aiconfidence=aiconfidence,
+            alert=alert,
+            msg=msg,
+            level=level,
+            timestamp=datetime.now(timezone.utc)
         )
         self.repository.save(sensor_data)
         
@@ -29,9 +34,19 @@ class ExportSensorDataCsvUseCase:
 
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["timestamp", "temperature", "humidity", "state"])
+        writer.writerow(["timestamp", "temperature", "humidity", "state", "aiclass", "aiconfidence", "alert", "msg", "level"])
         for entry in data:
-            writer.writerow([entry.timestamp.isoformat(), entry.temperature, entry.humidity, entry.state])
+            writer.writerow([
+                entry.timestamp.isoformat(), 
+                entry.temperature, 
+                entry.humidity, 
+                entry.state,
+                entry.aiclass,
+                entry.aiconfidence,
+                entry.alert,
+                entry.msg,
+                entry.level
+            ])
 
         return output.getvalue()
 

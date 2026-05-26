@@ -12,14 +12,18 @@ def test_store_sensor_data_use_case_success():
     temperature = 25.5
     humidity = 60.0
     state = "active"
+    aiclass = 1
+    aiconfidence = 95
     
     # Act
-    result = use_case.execute(temperature, humidity, state)
+    result = use_case.execute(temperature, humidity, state, aiclass, aiconfidence)
     
     # Assert
     assert isinstance(result, SensorData)
     assert result.temperature == temperature
     assert result.humidity == humidity
     assert result.state == state
+    assert result.aiclass == aiclass
+    assert result.aiconfidence == aiconfidence
     assert result.timestamp is not None
     mock_repository.save.assert_called_once()

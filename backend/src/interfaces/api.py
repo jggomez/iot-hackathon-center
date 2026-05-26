@@ -50,12 +50,22 @@ async def store_sensor_data(
             temperature=request.temperature,
             humidity=request.humidity,
             state=request.state,
+            aiclass=request.aiclass,
+            aiconfidence=request.aiconfidence,
+            alert=request.alert,
+            msg=request.msg,
+            level=request.level,
         )
         logger.info("Successfully stored sensor data from direct API")
         return SensorDataResponse(
             temperature=stored_data.temperature,
             humidity=stored_data.humidity,
             state=stored_data.state,
+            aiclass=stored_data.aiclass,
+            aiconfidence=stored_data.aiconfidence,
+            alert=stored_data.alert,
+            msg=stored_data.msg,
+            level=stored_data.level,
             timestamp=stored_data.timestamp.isoformat(),
         )
     except Exception as e:
@@ -77,6 +87,11 @@ async def store_pubsub_data(
             temperature=data.get("temperature", 0.0),
             humidity=data.get("humidity", 0.0),
             state=state,
+            aiclass=data.get("aiclass", 0),
+            aiconfidence=data.get("aiconfidence", 0),
+            alert=data.get("alert", "NORMAL"),
+            msg=data.get("msg", "Environment is optimal"),
+            level=data.get("level", "INFO"),
         )
         return
     except Exception as e:

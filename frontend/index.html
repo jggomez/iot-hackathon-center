@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoT Sensor Dashboard</title>
+    <title>IoT Hackathon Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Firebase SDK -->
@@ -12,118 +12,377 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); }
+        .modal { display: none; }
+        .modal.active { display: flex; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
     <div class="max-w-7xl mx-auto px-4 py-8">
         <!-- Header -->
-        <header class="flex justify-between items-center mb-8">
+        <header class="flex justify-between items-center mb-12">
             <div>
-                <h1 class="text-3xl font-bold tracking-tight text-slate-900">IoT Sensor Station</h1>
-                <p class="text-slate-500">Real-time monitoring of temperature and humidity</p>
+                <h1 class="text-4xl font-extrabold tracking-tight text-slate-900">Hackathon IoT Center</h1>
+                <p class="text-lg text-slate-500">Real-time room monitoring & remote control</p>
             </div>
             <div class="flex items-center space-x-4">
-                <button id="download-csv-btn" class="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                <button id="download-csv-btn" class="flex items-center space-x-2 bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg hover:shadow-xl active:scale-95">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    <span>Export CSV</span>
+                    <span>Export Reports</span>
                 </button>
-                <div class="flex items-center space-x-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    <span>Live</span>
-                </div>
             </div>
         </header>
 
-        <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Temperature Card -->
-            <div class="glass p-6 rounded-2xl border border-white shadow-sm transition-all hover:shadow-md">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="p-2 bg-orange-100 rounded-lg">
-                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    </span>
-                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current Temperature</span>
-                </div>
-                <div class="flex items-baseline space-x-1">
-                    <h2 id="current-temp" class="text-4xl font-bold">--</h2>
-                    <span class="text-xl text-slate-500 font-medium">°C</span>
-                </div>
-                <div class="mt-4 text-sm">
-                    <span class="text-slate-400">Average: </span>
-                    <span id="avg-temp" class="font-semibold">-- °C</span>
-                </div>
-            </div>
-
-            <!-- Humidity Card -->
-            <div class="glass p-6 rounded-2xl border border-white shadow-sm transition-all hover:shadow-md">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="p-2 bg-blue-100 rounded-lg">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                    </span>
-                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current Humidity</span>
-                </div>
-                <div class="flex items-baseline space-x-1">
-                    <h2 id="current-humidity" class="text-4xl font-bold">--</h2>
-                    <span class="text-xl text-slate-500 font-medium">%</span>
-                </div>
-                <div class="mt-4 text-sm">
-                    <span class="text-slate-400">Average: </span>
-                    <span id="avg-humidity" class="font-semibold">-- %</span>
-                </div>
-            </div>
-
-            <!-- Last Update Card -->
-            <div class="glass p-6 rounded-2xl border border-white shadow-sm transition-all hover:shadow-md">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="p-2 bg-purple-100 rounded-lg">
-                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </span>
-                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Last Reading</span>
-                </div>
-                <h2 id="last-update" class="text-2xl font-bold py-2 text-slate-700">--</h2>
-                <p id="device-state" class="text-sm font-medium px-2 py-1 bg-slate-100 text-slate-600 rounded inline-block">Status: --</p>
-            </div>
-        </div>
-
-        <!-- Device Controls -->
-        <div class="glass p-6 rounded-2xl border border-white shadow-sm mb-8">
-            <div class="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
+        <!-- Room Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Room 1 -->
+            <div id="room-1" class="glass p-8 rounded-3xl border border-white shadow-xl flex flex-col justify-between">
                 <div>
-                    <h3 class="text-lg font-bold text-slate-800">Remote Controls</h3>
-                    <p class="text-sm text-slate-500">Send commands to the IoT device via MQTT</p>
-                </div>
-                <div class="flex items-center space-x-6">
-                    <div class="flex flex-col items-end">
-                        <span id="switch-status-label" class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Device Power</span>
-                        <div class="flex items-center bg-white p-1.5 rounded-2xl shadow-inner border border-slate-100">
-                            <span id="toggle-state-text" class="text-xs font-black text-slate-400 mr-3 ml-2 transition-colors">OFF</span>
-                            <button id="device-toggle-btn" class="relative inline-flex h-9 w-16 items-center rounded-full bg-slate-200 transition-all duration-300 ease-in-out focus:outline-none ring-offset-2 disabled:opacity-50 group shadow-sm hover:shadow-md" aria-pressed="false" disabled>
-                                <span id="toggle-dot" class="inline-block h-7 w-7 transform rounded-full bg-white shadow-lg transition-transform duration-300 ease-in-out translate-x-1 group-hover:scale-105"></span>
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Room 01 - Main Stage</h2>
+                            <p class="text-sm text-slate-500 mt-1">
+                                Status: <span class="text-green-600 font-semibold">Connected</span>
+                                <span class="alarm-badge hidden ml-2 px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-black uppercase rounded-full animate-pulse border border-red-200">
+                                    ALARM ACTIVE
+                                </span>
+                            </p>
+                        </div>
+                        <div class="bg-blue-100 text-blue-700 p-3 rounded-2xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-6 mb-8">
+                        <div class="bg-orange-50 p-6 rounded-2xl border border-orange-100">
+                            <p class="text-xs font-bold text-orange-400 uppercase tracking-widest mb-1">Temperature</p>
+                            <div class="flex items-baseline space-x-1">
+                                <span class="current-temp text-4xl font-black text-orange-600">--</span>
+                                <span class="text-lg text-orange-400 font-bold">°C</span>
+                            </div>
+                        </div>
+                        <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 relative group">
+                            <button class="stress-info-btn absolute top-3 right-3 text-blue-300 hover:text-blue-500 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             </button>
-                            <span id="toggle-state-text-on" class="hidden text-xs font-black text-blue-600 mr-2 ml-3 transition-colors">ON</span>
+                            <p class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">Humidity</p>
+                            <div class="flex items-baseline space-x-1">
+                                <span class="current-hum text-4xl font-black text-blue-600">--</span>
+                                <span class="text-lg text-blue-400 font-bold">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thermal Stress Alert Section -->
+                    <div class="stress-card bg-slate-50 p-6 rounded-2xl border-2 border-slate-200 mb-8 transition-all duration-500 cursor-pointer hover:shadow-md hover:scale-[1.01]">
+                        <div class="flex justify-between items-center mb-3">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Environment Health</p>
+                            <span class="stress-level-badge px-2 py-0.5 rounded-full text-[10px] font-black uppercase">Normal</span>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div class="stress-icon-container p-3 rounded-xl bg-white shadow-sm transition-colors">
+                                <svg class="stress-icon w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="stress-msg text-sm font-bold text-slate-800 leading-tight">Everything is optimal.</h4>
+                                <p class="text-[10px] text-slate-500 font-medium mt-1 uppercase tracking-tighter">Thermal Stress Monitoring</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Status Section -->
+                    <div class="ai-analysis-card bg-slate-50 p-6 rounded-2xl border border-slate-200 mb-8 cursor-pointer hover:bg-slate-100 transition-colors">
+                        <div class="flex justify-between items-center mb-4">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">AI Room Analysis</p>
+                            <div class="flex items-center space-x-1">
+                                <span class="ai-confidence-text text-xs font-bold text-slate-500">--%</span>
+                                <div class="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                    <div class="ai-confidence-bar h-full bg-green-500 transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="ai-icon-container p-3 rounded-xl bg-white shadow-sm">
+                                <svg class="ai-icon w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="ai-class-name text-lg font-bold text-slate-800">Analyzing...</h4>
+                                <p class="ai-class-desc text-xs text-slate-500 font-medium tracking-tight uppercase">Waiting for AI processing</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between text-sm text-slate-400 mb-2">
+                        <span>Last Sensor Sync:</span>
+                        <span class="last-sync font-medium">--:--:--</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <button class="details-btn flex-1 bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-700 py-3 rounded-2xl font-bold transition-all hover:bg-slate-50">
+                            History
+                        </button>
+                        <div class="flex items-center space-x-3 bg-white border-2 border-slate-200 px-4 py-2.5 rounded-2xl">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Alarm</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer alarm-toggle">
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                            </label>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Chart Section -->
-        <div class="glass p-8 rounded-3xl border border-white shadow-xl overflow-hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-slate-800">Sensor History</h3>
-                <div class="flex space-x-2">
-                    <span class="flex items-center text-xs font-medium text-orange-500">
-                        <span class="w-3 h-3 bg-orange-500 rounded-full mr-1"></span> Temp
-                    </span>
-                    <span class="flex items-center text-xs font-medium text-blue-500">
-                        <span class="w-3 h-3 bg-blue-500 rounded-full mr-1"></span> Hum
-                    </span>
+            <!-- Room 2 -->
+            <div id="room-2" class="glass p-8 rounded-3xl border border-white shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Room 02 - Workshop</h2>
+                            <p class="text-sm text-slate-500 mt-1">
+                                Status: <span class="text-green-600 font-semibold">Connected</span>
+                                <span class="alarm-badge hidden ml-2 px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-black uppercase rounded-full animate-pulse border border-red-200">
+                                    ALARM ACTIVE
+                                </span>
+                            </p>
+                        </div>
+                        <div class="bg-purple-100 text-purple-700 p-3 rounded-2xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-6 mb-8">
+                        <div class="bg-orange-50 p-6 rounded-2xl border border-orange-100">
+                            <p class="text-xs font-bold text-orange-400 uppercase tracking-widest mb-1">Temperature</p>
+                            <div class="flex items-baseline space-x-1">
+                                <span class="current-temp text-4xl font-black text-orange-600">--</span>
+                                <span class="text-lg text-orange-400 font-bold">°C</span>
+                            </div>
+                        </div>
+                        <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 relative group">
+                            <button class="stress-info-btn absolute top-3 right-3 text-blue-300 hover:text-blue-500 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </button>
+                            <p class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">Humidity</p>
+                            <div class="flex items-baseline space-x-1">
+                                <span class="current-hum text-4xl font-black text-blue-600">--</span>
+                                <span class="text-lg text-blue-400 font-bold">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thermal Stress Alert Section -->
+                    <div class="stress-card bg-slate-50 p-6 rounded-2xl border-2 border-slate-200 mb-8 transition-all duration-500 cursor-pointer hover:shadow-md hover:scale-[1.01]">
+                        <div class="flex justify-between items-center mb-3">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Environment Health</p>
+                            <span class="stress-level-badge px-2 py-0.5 rounded-full text-[10px] font-black uppercase">Normal</span>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div class="stress-icon-container p-3 rounded-xl bg-white shadow-sm transition-colors">
+                                <svg class="stress-icon w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="stress-msg text-sm font-bold text-slate-800 leading-tight">Everything is optimal.</h4>
+                                <p class="text-[10px] text-slate-500 font-medium mt-1 uppercase tracking-tighter">Thermal Stress Monitoring</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Status Section -->
+                    <div class="ai-analysis-card bg-slate-50 p-6 rounded-2xl border border-slate-200 mb-8 cursor-pointer hover:bg-slate-100 transition-colors">
+                        <div class="flex justify-between items-center mb-4">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">AI Room Analysis</p>
+                            <div class="flex items-center space-x-1">
+                                <span class="ai-confidence-text text-xs font-bold text-slate-500">--%</span>
+                                <div class="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                    <div class="ai-confidence-bar h-full bg-green-500 transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="ai-icon-container p-3 rounded-xl bg-white shadow-sm">
+                                <svg class="ai-icon w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="ai-class-name text-lg font-bold text-slate-800">Analyzing...</h4>
+                                <p class="ai-class-desc text-xs text-slate-500 font-medium tracking-tight uppercase">Waiting for AI processing</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between text-sm text-slate-400 mb-2">
+                        <span>Last Sensor Sync:</span>
+                        <span class="last-sync font-medium">--:--:--</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <button class="details-btn flex-1 bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-700 py-3 rounded-2xl font-bold transition-all hover:bg-slate-50">
+                            History
+                        </button>
+                        <div class="flex items-center space-x-3 bg-white border-2 border-slate-200 px-4 py-2.5 rounded-2xl">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Alarm</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer alarm-toggle">
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="relative h-[400px]">
-                <canvas id="sensorChart"></canvas>
+
+            <!-- Room 3 -->
+            <div id="room-3" class="bg-slate-100 p-8 rounded-3xl border border-dashed border-slate-300 flex flex-col items-center justify-center opacity-60">
+                <div class="bg-white p-4 rounded-full shadow-inner mb-4">
+                    <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <h2 class="text-xl font-bold text-slate-400">Room 03 - Lounge</h2>
+                <p class="text-sm text-slate-400 mt-1">No device detected</p>
+            </div>
+
+            <!-- Room 4 -->
+            <div id="room-4" class="bg-slate-100 p-8 rounded-3xl border border-dashed border-slate-300 flex flex-col items-center justify-center opacity-60">
+                <div class="bg-white p-4 rounded-full shadow-inner mb-4">
+                    <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <h2 class="text-xl font-bold text-slate-400">Room 04 - Lab</h2>
+                <p class="text-sm text-slate-400 mt-1">No device detected</p>
+            </div>
+        </div>
+
+        <!-- History Modal -->
+        <div id="history-modal" class="modal fixed inset-0 z-50 items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                    <div>
+                        <h3 id="modal-title" class="text-2xl font-bold text-slate-800">Sensor History</h3>
+                        <p class="text-sm text-slate-500">Showing last 50 data points</p>
+                    </div>
+                    <button id="close-modal" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                        <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="p-8 flex-1 overflow-hidden relative min-h-[400px]">
+                    <canvas id="sensorChart"></canvas>
+                </div>
+                <div class="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+                    <button id="close-modal-btn" class="bg-slate-800 text-white px-6 py-2 rounded-xl font-bold">Close</button>
+                </div>
+            </div>
+        </div>
+        <!-- Thermal Stress Modal -->
+        <div id="stress-modal" class="modal fixed inset-0 z-50 items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-orange-50">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-orange-600 p-2 rounded-lg">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800">Thermal Stress Guide</h3>
+                    </div>
+                    <button id="close-stress-modal" class="p-2 hover:bg-orange-100 rounded-full transition-colors">
+                        <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="p-8 overflow-y-auto">
+                    <div class="mb-6">
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            In closed events with many people, <span class="font-bold text-slate-900">thermal stress from overcrowding</span> occurs. The human body acts as a heat radiator and a constant humidifier. Humidity is critical: if the air is saturated, sweat does not evaporate, and the thermal sensation skyrockets, risking heat stroke or fainting.
+                        </p>
+                    </div>
+                    
+                    <div class="overflow-hidden border border-slate-200 rounded-2xl">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50">
+                                    <th class="p-4 text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">Alert Level</th>
+                                    <th class="p-4 text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">Temp Range</th>
+                                    <th class="p-4 text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">Hum Range</th>
+                                    <th class="p-4 text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">Diagnosis</th>
+                                    <th class="p-4 text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">System Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-xs">
+                                <tr class="border-b border-slate-100">
+                                    <td class="p-4 font-bold text-green-600">🟢 Normal</td>
+                                    <td class="p-4 text-slate-600">< 26°C</td>
+                                    <td class="p-4 text-slate-600">40% - 60%</td>
+                                    <td class="p-4 text-slate-500 italic">Optimal comfort. Controlled capacity and adequate ventilation.</td>
+                                    <td class="p-4 text-slate-700 font-medium">All in order. LED Off. Normal telemetry.</td>
+                                </tr>
+                                <tr class="border-b border-slate-100 bg-yellow-50/30">
+                                    <td class="p-4 font-bold text-yellow-600">🟡 Warning</td>
+                                    <td class="p-4 text-slate-600">26°C - 29.9°C</td>
+                                    <td class="p-4 text-slate-600">61% - 70%</td>
+                                    <td class="p-4 text-slate-500 italic">Nearly full / Insufficient ventilation. Air starts to feel heavy.</td>
+                                    <td class="p-4 text-slate-700 font-medium">Preventive alert via MQTT. Slow LED blinking.</td>
+                                </tr>
+                                <tr class="bg-red-50/30">
+                                    <td class="p-4 font-bold text-red-600">🔴 Critical Danger</td>
+                                    <td class="p-4 text-slate-600">≥ 30°C</td>
+                                    <td class="p-4 text-slate-600">> 70%</td>
+                                    <td class="p-4 text-slate-500 italic">Overcrowding / Risk of heat stroke. Exceeds safety standards.</td>
+                                    <td class="p-4 text-slate-700 font-medium">Red Alert. Fixed LED on. Urgent MQTT alarm.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+                    <button id="close-stress-modal-btn" class="bg-slate-800 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-slate-900 transition-all active:scale-95">I Understand</button>
+                </div>
+            </div>
+        </div>
+        <!-- AI Explanation Modal -->
+        <div id="ai-modal" class="modal fixed inset-0 z-50 items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-blue-600 p-2 rounded-lg">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800">AI Analysis Legend</h3>
+                    </div>
+                    <button id="close-ai-modal" class="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                        <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="p-8 overflow-y-auto space-y-8">
+                    <!-- Class 0 -->
+                    <div class="relative pl-6 border-l-4 border-purple-500">
+                        <h4 class="text-lg font-black text-purple-600 uppercase tracking-tight">Class 0: DEEP_FOCUS</h4>
+                        <p class="text-sm font-bold text-slate-700 mt-1">Workshop / Concentration Mode</p>
+                        <div class="mt-3 space-y-2">
+                            <p class="text-xs text-slate-500"><span class="font-bold text-slate-700">What to record:</span> People typing actively on laptops, low murmurs, fans, air conditioning, sliding chairs, or notebook pages.</p>
+                            <p class="text-xs text-slate-500"><span class="font-bold text-slate-700">Acoustic signature:</span> Continuous, flat sound, without sudden volume spikes.</p>
+                        </div>
+                    </div>
+
+                    <!-- Class 1 -->
+                    <div class="relative pl-6 border-l-4 border-orange-500">
+                        <h4 class="text-lg font-black text-orange-600 uppercase tracking-tight">Class 1: HIGH_ENGAGEMENT</h4>
+                        <p class="text-sm font-bold text-slate-700 mt-1">Talk / Keynote Mode</p>
+                        <div class="mt-3 space-y-2">
+                            <p class="text-xs text-slate-500"><span class="font-bold text-slate-700">What to record:</span> Constant voice speaking via microphone, followed by bursts of applause, collective laughter, or exclamations.</p>
+                            <p class="text-xs text-slate-500"><span class="font-bold text-slate-700">Acoustic signature:</span> Alternation between a dominant voice frequency and abrupt energy peaks (applause).</p>
+                        </div>
+                    </div>
+
+                    <!-- Class 2 -->
+                    <div class="relative pl-6 border-l-4 border-slate-300">
+                        <h4 class="text-lg font-black text-slate-400 uppercase tracking-tight">Class 2: ROOM_EMPTY</h4>
+                        <p class="text-sm font-bold text-slate-700 mt-1">Empty or Break Mode</p>
+                        <div class="mt-3 space-y-2">
+                            <p class="text-xs text-slate-500"><span class="font-bold text-slate-700">What to record:</span> Total silence or minimal ambient noise without human presence.</p>
+                            <p class="text-xs text-slate-500"><span class="font-bold text-slate-700">Acoustic signature:</span> Base noise level, absence of voice patterns or rhythmic mechanical activity.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+                    <button id="close-ai-modal-btn" class="bg-slate-800 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-slate-900 transition-all active:scale-95">Got it!</button>
+                </div>
             </div>
         </div>
     </div>
 </body>
 </html>
+

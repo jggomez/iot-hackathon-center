@@ -24,7 +24,7 @@ steps:
       - '--cpu=1'
       - '--memory=512Mi'
       - '--set-env-vars'
-      - 'MQTT_BROKER=wdfcc162.ala.dedicated.gcp.emqxcloud.com,MQTT_PORT=1883,MQTT_USER=pc-01,MQTT_PASSWORD=123AcE,MQTT_TOPIC=device01/sensors,MQTT_CLIENT_ID=iot-backend-api'
+      - 'MQTT_BROKER=da811fb8.ala.dedicated.gcp.emqxcloud.com,MQTT_PORT=1883,MQTT_USER=pc-01,MQTT_PASSWORD=123AcE,MQTT_TOPIC=device01/sensors,MQTT_CLIENT_ID=iot-backend-api'
 
 images:
   - 'gcr.io/$PROJECT_ID/iot-sensor-api:latest'
