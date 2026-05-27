@@ -16,7 +16,7 @@
 
 // Hardware configuration
 #define DHTPIN 14          
-#define MIC_PIN 27         
+#define MIC_PIN 34         
 #define DHTTYPE DHT22
 const int PIN_LED = 32;    
 
@@ -27,6 +27,11 @@ PubSubClient client(espClient);
 // Non-blocking timers
 unsigned long lastPublishTime = 0;
 const long PUBLISH_INTERVAL = 5000; 
+
+// LED non-blocking blink variables
+unsigned long lastBlinkTime = 0;   
+const long BLINK_INTERVAL = 500;   
+bool ledState = false;             
 
 // Global variables
 float global_temp = 0.0;
@@ -92,12 +97,24 @@ void reconnectMQTT() {
 }
 
 /**
+ * @brief Toggles the LED state non-blockingly based on a defined time interval.
+ */
+void toggleLedNonBlocking() {
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastBlinkTime >= BLINK_INTERVAL) {
+        lastBlinkTime = currentMillis; 
+        ledState = !ledState;          
+        digitalWrite(PIN_LED, ledState);
+    }
+}
+
+/**
  * @brief Evaluates density thresholds and injects alert flags by reference.
  */
 void evaluateEventSecurity(float temperature, float humidity, JsonDocument& doc) {
     const float TEMP_CRITICAL    = 30.0; 
     const float HUM_CRITICAL     = 70.0; 
-    const float TEMP_WARNING     = 27.0; 
+    const float TEMP_WARNING     = 26.0; 
     const float HUM_WARNING      = 60.0; 
 
     if (temperature >= TEMP_CRITICAL || humidity >= HUM_CRITICAL) {
@@ -107,7 +124,7 @@ void evaluateEventSecurity(float temperature, float humidity, JsonDocument& doc)
         doc["level"] = "danger"; 
     } 
     else if (temperature >= TEMP_WARNING || humidity >= HUM_WARNING) {
-        digitalWrite(PIN_LED, HIGH);
+        toggleLedNonBlocking();      
         doc["alert"] = "WARNING_HIGH_DENSITY";
         doc["msg"] = "Attention: High occupant density detected. Increasing room ventilation is advised.";
         doc["level"] = "warning"; 
@@ -129,7 +146,6 @@ void publishTelemetry() {
         return;
     }
 
-    // Allocate single ununified JSON block for telemetry + states + alerts
     StaticJsonDocument<384> doc;
 
     doc["temperature"] = global_temp;
@@ -138,7 +154,6 @@ void publishTelemetry() {
     doc["aiclass"] = global_predicted_class; 
     doc["aiconfidence"] = (int)(global_max_score * 100); 
 
-    // Append alert variables directly into the document
     evaluateEventSecurity(global_temp, global_hum, doc);
 
     char buffer[384];
@@ -180,14 +195,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
 }
 
 void setup() {
-    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // Disable brownout detection
-    setCpuFrequencyMhz(240);                  // 240MHz for fast LSTM execution
+    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // Disable brownout resets
+    setCpuFrequencyMhz(240);                  // Set CPU clock to maximum for faster inference
     
     Serial.begin(115200);
     delay(1000);
     Serial.println("\n--- COGNITIVE EMBEDDED IoT CORE INITIALIZING ---");
     Serial.flush(); 
 
+    pinMode(MIC_PIN, INPUT); // Pin declared as input prior to any peripheral memory allocations
     pinMode(PIN_LED, OUTPUT);
     dht.begin();
     setupWiFi();
@@ -200,7 +216,7 @@ void setup() {
         Serial.println("[CRITICAL ERROR] MQTT_SERVER macro empty in secrets.h!");
     }
 
-    // Allocate memory arena directly into PSRAM (SPIRAM)
+    // Allocate memory arena directly into external PSRAM
     tensor_arena = (uint8_t*) heap_caps_aligned_alloc(16, kTensorArenaSize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (tensor_arena == nullptr) {
         Serial.println("[ERROR] PSRAM allocation failure.");
@@ -240,20 +256,56 @@ void loop() {
     }
     client.loop(); 
 
-    // 1. Hardware Audio Sample Acquisition (16KHz Enforced)
-    for (int t = 0; t < TIME_STEPS; t++) {
-        for (int f = 0; f < FEATURES; f++) {
-            int raw_sample = analogRead(MIC_PIN); // Uncomment for hardware microphone use
-            //int raw_sample = 3000; 
+    // ===================================================================
+    // 1. HARDWARE AUDIO SAMPLE ACQUISITION WITH AUTO-CENTER & NOISE GATE
+    // ===================================================================
+    int raw_buffer[TIME_STEPS * FEATURES];
+    long total_sum = 0; 
+    int max_val = 0;
+
+    // Step A: Read ADC raw values and compute the exact window sum
+    for (int i = 0; i < TIME_STEPS * FEATURES; i++) {
+        int sample = analogRead(MIC_PIN); 
+        raw_buffer[i] = sample;
+        total_sum += sample; 
+        delayMicroseconds(52); 
+    }
+
+    // Compute the dynamic DC Offset center for this buffer frame
+    int real_center = (int)(total_sum / (TIME_STEPS * FEATURES));
+
+    // Step B: Re-center the waveform around 0 and extract absolute peak amplitude
+    for (int i = 0; i < TIME_STEPS * FEATURES; i++) {
+        raw_buffer[i] = raw_buffer[i] - real_center; 
+        
+        if (abs(raw_buffer[i]) > max_val) {
+            max_val = abs(raw_buffer[i]);
+        }
+    }
+
+    // Mathematical Noise Gate: If peak-to-center variance stays below threshold, 
+    // force an absolute flatline to map the Silence state (Class 2) with high confidence.
+    const int NOISE_THRESHOLD = 90; 
+    bool is_ambient_silence = (max_val < NOISE_THRESHOLD);
+
+    if (max_val == 0) max_val = 1;
+
+    // Step C: Quantize to signed INT8 and mirror Python moving average convolution
+    int8_t current_int8 = 0;
+    int8_t prev_int8 = 0;
+    int8_t next_int8 = 0;
+
+    for (int i = 0; i < TIME_STEPS * FEATURES; i++) {
+        if (is_ambient_silence) {
+            input->data.int8[i] = 0; // Pure silent flatline token injector
+        } else {
+            current_int8 = (int8_t)((raw_buffer[i] * 127) / max_val);
             
-            // Quantization: Map ADC readings to signed INT8 workspace [-128, 127]
-            int8_t normalized_sample = (int8_t)((raw_sample / 16.12) - 128); 
+            prev_int8 = (i > 0) ? (int8_t)((raw_buffer[i-1] * 127) / max_val) : current_int8;
+            next_int8 = (i < (TIME_STEPS * FEATURES) - 1) ? (int8_t)((raw_buffer[i+1] * 127) / max_val) : current_int8;
             
-            int tensor_index = (t * FEATURES) + f;
-            input->data.int8[tensor_index] = normalized_sample;
-            
-            // 52us delay + 10us ADC sample windows = 62.5us period (16,000 Hz)
-            delayMicroseconds(52);
+            int8_t smoothed_sample = (int8_t)((prev_int8 + current_int8 + next_int8) / 3);
+            input->data.int8[i] = smoothed_sample;
         }
     }
 
@@ -299,7 +351,7 @@ void loop() {
         }
     }
 
-    // State commitment requires an absolute quorum of 6/10 historical window records
+    // Commit state if absolute quorum matches at least 6 out of 10 window tokens
     if (dominant_votes >= 6) {
         global_predicted_class = stable_majority_class;
         global_max_score = scores[stable_majority_class]; 

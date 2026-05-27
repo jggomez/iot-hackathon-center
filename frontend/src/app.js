@@ -216,25 +216,30 @@ function updateRealtimeUI(latest) {
     humEls.forEach(el => el.textContent = hum);
     syncEls.forEach(el => el.textContent = time);
 
-    // Update AI UI
-    const aiData = AI_CLASSES[latest.aiclass] || AI_CLASSES[2];
+    // Update AI UI - Only update if confidence > 80
     const confidence = latest.aiconfidence || 0;
 
-    aiClassNameEls.forEach(el => {
-        el.textContent = aiData.name;
-        el.className = `ai-class-name text-lg font-bold ${aiData.color}`;
-    });
-    aiClassDescEls.forEach(el => el.textContent = aiData.desc);
-    aiConfidenceTextEls.forEach(el => el.textContent = `${confidence}%`);
-    aiConfidenceBarEls.forEach(el => {
-        el.style.width = `${confidence}%`;
-        el.className = `ai-confidence-bar h-full transition-all duration-500 ${confidence > 80 ? 'bg-green-500' : confidence > 50 ? 'bg-yellow-500' : 'bg-red-500'}`;
-    });
-    aiIconContainerEls.forEach(el => el.className = `ai-icon-container p-3 rounded-xl shadow-sm transition-colors ${aiData.bgColor}`);
-    aiIconEls.forEach(el => {
-        el.innerHTML = aiData.icon;
-        el.setAttribute('class', `ai-icon w-6 h-6 ${aiData.color}`);
-    });
+    if (confidence > 80) {
+        const aiData = AI_CLASSES[latest.aiclass] || AI_CLASSES[2];
+
+        aiClassNameEls.forEach(el => {
+            el.textContent = aiData.name;
+            el.className = `ai-class-name text-lg font-bold ${aiData.color}`;
+        });
+        aiClassDescEls.forEach(el => el.textContent = aiData.desc);
+        aiConfidenceTextEls.forEach(el => el.textContent = `${confidence}%`);
+        aiConfidenceBarEls.forEach(el => {
+            el.style.width = `${confidence}%`;
+            el.className = `ai-confidence-bar h-full transition-all duration-500 bg-green-500`;
+        });
+        aiIconContainerEls.forEach(el => el.className = `ai-icon-container p-3 rounded-xl shadow-sm transition-colors ${aiData.bgColor}`);
+        aiIconEls.forEach(el => {
+            el.innerHTML = aiData.icon;
+            el.setAttribute('class', `ai-icon w-6 h-6 ${aiData.color}`);
+        });
+    } else {
+        console.log(`AI confidence (${confidence}%) is not high enough (>80%) to update classification UI.`);
+    }
 
     // Update Thermal Stress UI
     const rawAlert = latest.alert !== undefined ? latest.alert : 'NORMAL';
