@@ -138,9 +138,11 @@ Risk evaluation based on the Heat Index (HI) standards:
 *   **Latency**: Inference completed in < 150ms.
 
 ## Conclusions
-1.  **TinyML Feasibility**: LSTM networks can run efficiently on ESP32 microcontrollers, providing deep context with minimal hardware costs.
+1.  **TinyML Feasibility**: Edge deployment of image-processing Convolutional Neural Networks on budget microcontrollers is highly viable. Full INT8 quantization effectively reduces the memory footprint by roughly 400% without a significant sacrifice in the layers' mathematical precision.
 2.  **Scalable Safety**: The integration of thermal stress alerts provides a proactive safety layer for crowded events.
 3.  **Privacy & Efficiency**: Local inference ensures data privacy and significantly reduces bandwidth requirements.
+3.  **Hardware Overrides Library Luxury**: Standard "easy-to-use" libraries fail when confronted with complex matrix operations or computer vision tasks. Developing stable embedded AI systems requires direct interaction with hardware features (like explicit PSRAM allocation) and standard native APIs.
+
 
 ## Bibliography & References
 1.  **Piczak, K. J.** (2015). *Environmental Sound Classification*. ACM Multimedia.
